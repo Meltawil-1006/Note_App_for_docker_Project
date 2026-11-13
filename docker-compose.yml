@@ -1,0 +1,40 @@
+services:
+    db:
+      image: postgres:16-alpine
+      container_name: db-note-app
+      environment: 
+        POSTGRES_USER: mostafa
+        POSTGRES_PASSWORD: mostafa
+        POSTGRES_DB: appdb
+      volumes:
+        - note-volume:/var/lib/postgresql/data
+        - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U mostafa -d appdb"]
+        interval: 3s
+        retries: 10
+
+    frontend:
+      build:
+        context: ./frontend
+        dockerfile: Dockerfile
+      ports:
+        - "8080:80"
+      depends_on:
+        - backend
+
+    backend:
+      build:
+        context: ./backend
+        dockerfile: Dockerfile
+      environment:
+        DB_HOST: db
+        DB_USER: mostafa
+        DB_PASSWORD: mostafa
+        DB_NAME: appdb
+      depends_on:
+        db:
+          condition: service_healthy
+
+volumes:
+  note-volume:
